@@ -11,14 +11,13 @@ def check_for_redirect(response):
 def save_book(url_image, name_image, path_image):
     os.makedirs(path_image, exist_ok=True)
     response = requests.get(url_image)
-    # try:
-    check_for_redirect(response=response)
-    # except requests.TooManyRedirects:
-    #     print('Errors TooManyRedirects')
-
     response.raise_for_status()
-    with open(f"{path_image}{os.sep}{name_image}", 'wb') as file:
-        file.write(response.content)
+    try:
+        check_for_redirect(response=response)
+        with open(f"{path_image}{os.sep}{name_image}", 'wb') as file:
+            file.write(response.content)
+    except requests.TooManyRedirects:
+        print('Errors TooManyRedirects')
 
 
 if __name__ == '__main__':
