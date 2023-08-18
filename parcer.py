@@ -3,9 +3,19 @@ import requests
 from environs import Env
 
 
+def check_for_redirect(response):
+    if response.history:
+        if response.history[0].status_code in [301, 302, 303, 304]:
+            raise requests.TooManyRedirects
+
 def save_book(url_image, name_image, path_image):
     os.makedirs(path_image, exist_ok=True)
     response = requests.get(url_image)
+    # try:
+    check_for_redirect(response=response)
+    # except requests.TooManyRedirects:
+    #     print('Errors TooManyRedirects')
+
     response.raise_for_status()
     with open(f"{path_image}{os.sep}{name_image}", 'wb') as file:
         file.write(response.content)
