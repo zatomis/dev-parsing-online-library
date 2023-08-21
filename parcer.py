@@ -17,6 +17,31 @@ def clear_comment(comment):
     return str(comment).replace('<span class="black">книге:</span>','').replace('<span class="black">','').replace('</span>','').replace('- перейти к книгам этого жанра','').strip()
 
 
+def parse_book_page(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    title_tag = soup.find('td', class_='ow_px_td').find('div').find('h1').text.split('::')
+    book_name = str(title_tag[0]).replace('\\xa0', ' ').strip()
+    book_author = str(title_tag[1]).replace('\\xa0', ' ').strip()
+    img_tag = soup.find('div', class_='bookimage').find('img')['src']
+    genre_tag = soup.find('span', class_='d_book').find('a')['title']
+    serialized_comments = []
+    comment_tag = soup.find_all('span', class_='black')
+    for comment in comment_tag:
+        if(clear_comment(comment)):
+            serialized_comments.append({
+                'text': clear_comment(comment),
+            })
+
+    serialized_book = {
+        "title": book_name,
+        "author": book_author,
+        "comments": serialized_comments,
+        "image_url": img_tag,
+        "genre": clear_comment(genre_tag),
+    }
+    return serialized_book
+
+
 def download_txt(url_book, path_image='book'):
     os.makedirs(path_image, exist_ok=True)
     response = requests.get(url_book)
@@ -30,39 +55,22 @@ def download_txt(url_book, path_image='book'):
         response = requests.get(url)
         response.raise_for_status()
 
-        soup = BeautifulSoup(response.text, 'lxml')
-        # title_tag = soup.find('td', class_='ow_px_td').find('div').find('h1').text.split('::')
-        book_name = '1'
-        # book_name = str(title_tag[0]).replace('\\xa0', ' ').strip()
-        book_author = '2'
-        # book_author = str(title_tag[1]).replace('\\xa0', ' ').strip()
-        img_tag = soup.find('div', class_='bookimage').find('img')['src']
-        print(urljoin(main_url, img_tag))
-        save.save_photo(urljoin(main_url, img_tag), f"{book_id}.{img_tag.split('.')[-1]}", "imgage")
+        print(parse_book_page(response.text))
 
-        # comment_tag = soup.find_all('span', class_='black')
-        # for comment in comment_tag:
-        #     if(clear_comment(comment)):
-        #         print(clear_comment(comment))
+        # name_image = f"{book_id}-{book_name} ({book_author}).txt"
+        name_image = f"{book_id}.txt"
 
-        # genre_tag = soup.find_all('span', class_='d_book')
-        genre_tag = soup.find('span', class_='d_book').find('a')['title']
-        # genre_tag = soup.find('span', class_='d_book').find('title')
-        print(clear_comment(genre_tag))
-
-        # for genre in genre_tag:
-        #     if(clear_comment(genre)):
-        #         print(clear_comment(genre))
-
-        name_image = f"{book_id}-{book_name} ({book_author}).txt"
         # name_image = sanitize_filename(f"{book_id}-{book_name} ({book_author}).txt")
         # path_image = sanitize_filename(path_image)
+
+        # save.save_photo(urljoin(main_url, img_tag), f"{book_id}.{img_tag.split('.')[-1]}", "image")
+
         with open(f"{path_image}{os.sep}{name_image}", 'wb') as file:
             file.write(book_text)
 
         return os.path.join(path_image, name_image)
     except requests.TooManyRedirects:
-        print(f'Нет данных для скачивания : {url_book}')
+        # print(f'Нет данных для скачивания : {url_book}')
         return ""
 
 
