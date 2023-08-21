@@ -14,7 +14,8 @@ def check_for_redirect(response):
             raise requests.TooManyRedirects
 
 def clear_comment(comment):
-    return str(comment).replace('<span class="black">книге:</span>','').replace('<span class="black">','').replace('</span>','')
+    return str(comment).replace('<span class="black">книге:</span>','').replace('<span class="black">','').replace('</span>','').replace('- перейти к книгам этого жанра','').strip()
+
 
 def download_txt(url_book, path_image='book'):
     os.makedirs(path_image, exist_ok=True)
@@ -39,10 +40,19 @@ def download_txt(url_book, path_image='book'):
         print(urljoin(main_url, img_tag))
         save.save_photo(urljoin(main_url, img_tag), f"{book_id}.{img_tag.split('.')[-1]}", "imgage")
 
-        comment_tag = soup.find_all('span', class_='black')
-        for comment in comment_tag:
-            if(clear_comment(comment)):
-                print(clear_comment(comment))
+        # comment_tag = soup.find_all('span', class_='black')
+        # for comment in comment_tag:
+        #     if(clear_comment(comment)):
+        #         print(clear_comment(comment))
+
+        # genre_tag = soup.find_all('span', class_='d_book')
+        genre_tag = soup.find('span', class_='d_book').find('a')['title']
+        # genre_tag = soup.find('span', class_='d_book').find('title')
+        print(clear_comment(genre_tag))
+
+        # for genre in genre_tag:
+        #     if(clear_comment(genre)):
+        #         print(clear_comment(genre))
 
         name_image = f"{book_id}-{book_name} ({book_author}).txt"
         # name_image = sanitize_filename(f"{book_id}-{book_name} ({book_author}).txt")
@@ -59,7 +69,7 @@ def download_txt(url_book, path_image='book'):
 if __name__ == '__main__':
     env = Env()
     env.read_env()
-    for book_id in range(10):
+    for book_id in range(15):
         download_txt(f"https://tululu.org/txt.php?id={book_id}")
 
 
