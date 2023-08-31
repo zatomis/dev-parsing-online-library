@@ -2,10 +2,10 @@ import os
 from environs import Env
 from bs4 import BeautifulSoup
 import requests
+import argparse
 from urllib.parse import urlparse
 from urllib.parse import urljoin
-import save_image_to_dir as save
-# from pathvalidate import sanitize_filename
+from pathvalidate import sanitize_filename
 
 
 def check_for_redirect(response):
@@ -13,9 +13,29 @@ def check_for_redirect(response):
         if response.history[0].status_code in [301, 302, 303, 304]:
             raise requests.TooManyRedirects
 
+
 def clear_comment(comment):
     return str(comment).replace('<span class="black">книге:</span>','').replace('<span class="black">','').replace('</span>','').replace('- перейти к книгам этого жанра','').strip()
 
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Парсер библиотеки www.tululu.org'
+    )
+    parser.add_argument(
+        '--start_id',
+        default=1,
+        type=int,
+        help='Cкачивать с страницы №',
+    )
+    parser.add_argument(
+        '--end_id',
+        default=10,
+        type=int,
+        help='Остановить на странице №',
+    )
+    args = parser.parse_args()
+    return args
 
 def parse_book_page(html_content):
     soup = BeautifulSoup(html_content, 'lxml')
@@ -24,18 +44,18 @@ def parse_book_page(html_content):
     book_author = str(title_tag[1]).replace('\\xa0', ' ').strip()
     img_tag = soup.find('div', class_='bookimage').find('img')['src']
     genre_tag = soup.find('span', class_='d_book').find('a')['title']
-    serialized_comments = []
+    comments = []
     comment_tag = soup.find_all('span', class_='black')
     for comment in comment_tag:
         if(clear_comment(comment)):
-            serialized_comments.append({
+            comments.append({
                 'text': clear_comment(comment),
             })
 
     serialized_book = {
-        "title": book_name,
+        "title": sanitize_filename(book_name),
         "author": book_author,
-        "comments": serialized_comments,
+        "comments": comments,
         "image_url": img_tag,
         "genre": clear_comment(genre_tag),
     }
@@ -54,30 +74,19 @@ def download_txt(url_book, path_image='book'):
         url = f"{main_url}/b{book_id}"
         response = requests.get(url)
         response.raise_for_status()
-
         print(parse_book_page(response.text))
-
-        # name_image = f"{book_id}-{book_name} ({book_author}).txt"
-        name_image = f"{book_id}.txt"
-
-        # name_image = sanitize_filename(f"{book_id}-{book_name} ({book_author}).txt")
-        # path_image = sanitize_filename(path_image)
-
-        # save.save_photo(urljoin(main_url, img_tag), f"{book_id}.{img_tag.split('.')[-1]}", "image")
-
-        with open(f"{path_image}{os.sep}{name_image}", 'wb') as file:
-            file.write(book_text)
+        print("")
 
         return os.path.join(path_image, name_image)
     except requests.TooManyRedirects:
-        # print(f'Нет данных для скачивания : {url_book}')
         return ""
 
 
 if __name__ == '__main__':
     env = Env()
     env.read_env()
-    for book_id in range(15):
+    parsed_arguments = parse_arguments()
+    for book_id in range(parsed_arguments.start_id, parsed_arguments.end_id):
         download_txt(f"https://tululu.org/txt.php?id={book_id}")
 
 
