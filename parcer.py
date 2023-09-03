@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 import argparse
 from urllib.parse import urlparse
-import urllib.parse
 from time import sleep
 from pathvalidate import sanitize_filename
 
@@ -54,9 +53,8 @@ def parse_book_page(html_content):
 
 def create_json_for_book(book_id):
     params = {'id': book_id}
-    encoded = urllib.parse.urlencode(params)
-    url_book = f"https://tululu.org/txt.php?{encoded}"
-    response = requests.get(url_book)
+    url_book = f"https://tululu.org/txt.php"
+    response = requests.get(url_book, params)
     response.raise_for_status()
     try:
         check_for_redirect(response=response)
