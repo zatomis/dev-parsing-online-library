@@ -8,8 +8,7 @@ from pathvalidate import sanitize_filename
 
 def check_for_redirect(response):
     if response.history:
-        if response.history:
-            raise requests.HTTPError
+        raise requests.HTTPError
 
 
 
@@ -62,7 +61,6 @@ def create_json_for_book(book_id):
         url = f"{main_url}/b{book_id}"
         response = requests.get(url)
         response.raise_for_status()
-        print(parse_book_page(response.text))
     except requests.TooManyRedirects:
         return ""
 
