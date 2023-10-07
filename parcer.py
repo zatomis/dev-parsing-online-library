@@ -50,7 +50,7 @@ def parse_book_page(html_content):
     return serialized_book['title']
 
 
-def create_json_for_book(book_id):
+def get_book_by_id(book_id):
     params = {'id': book_id}
     url_book = f"https://tululu.org/txt.php"
     response = requests.get(url_book, params)
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     current_book_id = parsed_arguments.start_id
     while (current_book_id <= parsed_arguments.end_id):
         try:
-            create_json_for_book(current_book_id)
+            get_book_by_id(current_book_id)
             current_book_id +=1
         except requests.exceptions.HTTPError:
             print(f'Книга с ID {current_book_id} не существует')
