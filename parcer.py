@@ -55,15 +55,11 @@ def get_book_by_id(book_id):
     url_book = f"https://tululu.org/txt.php"
     response = requests.get(url_book, params)
     response.raise_for_status()
-    try:
-        check_for_redirect(response=response)
-        main_url = f"{str(urlparse(url_book).scheme)}://{str(urlparse(url_book).netloc)}"
-        url = f"{main_url}/b{book_id}"
-        response = requests.get(url)
-        response.raise_for_status()
-    except requests.TooManyRedirects:
-        return ""
-
+    check_for_redirect(response=response)
+    main_url = f"{str(urlparse(url_book).scheme)}://{str(urlparse(url_book).netloc)}"
+    url = f"{main_url}/b{book_id}"
+    response = requests.get(url)
+    response.raise_for_status()
 
 if __name__ == '__main__':
     parsed_arguments = parse_arguments()
