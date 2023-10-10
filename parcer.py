@@ -56,8 +56,7 @@ def get_book_by_id(book_id):
     response = requests.get(url_book, params)
     response.raise_for_status()
     check_for_redirect(response=response)
-    main_url = f"{str(urlparse(url_book).scheme)}://{str(urlparse(url_book).netloc)}"
-    url = f"{main_url}/b{book_id}"
+    url = f"https://tululu.org/b{book_id}"
     response = requests.get(url)
     response.raise_for_status()
 
