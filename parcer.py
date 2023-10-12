@@ -27,7 +27,7 @@ def parse_arguments():
     )
     parser.add_argument(
         '--end_id',
-        default=10,
+        default=5,
         type=int,
         help='Остановить на странице №',
     )
@@ -37,10 +37,12 @@ def parse_arguments():
 
 def file_extension(url):
     path, filename = os.path.split(urlsplit(url).path)
+    print(path)
+    print(filename)
     return filename
 
 
-def parse_book_page(html_content):
+def get_book_info(html_content):
     soup = BeautifulSoup(html_content, 'lxml')
     title_tag = soup.find('td', class_='ow_px_td').find('div').find('h1').text.split('::')
     book_name = str(title_tag[0]).replace('\\xa0', ' ').strip()
@@ -67,15 +69,18 @@ def get_book_by_id(book_id):
     url_book = f"https://tululu.org/txt.php"
     response = requests.get(url_book, params)
     response.raise_for_status()
+    book_content = response.content
     check_for_redirect(response=response)
     url = f"https://tululu.org/b{book_id}"
     response = requests.get(url)
     response.raise_for_status()
-    return response.text
+    return response.text, book_content
 
 
-def download_image(url, book_page):
-    img_url = urljoin(url, book_page['book_image'])
+def download_image(url, book_page_image):
+    # print(url)
+    # print(book_page_image)
+    img_url = urljoin(url, book_page_image)
     folder_name = os.path.join('images', file_extension(img_url))
     pathlib.Path('images').mkdir(parents=True, exist_ok=True)
     response = requests.get(img_url)
@@ -84,20 +89,12 @@ def download_image(url, book_page):
         file.write(response.content)
 
 
-def download_txt(url, book_page):
-    book_name = sanitize_filename(book_page['title']).strip()
+def download_txt(book_page_title, book_content):
+    book_name = sanitize_filename(book_page_title).strip()
     folder_name = os.path.join('books', f'{book_name}.txt')
-    pathlib.Path('books').mkdir(
-        parents=True,
-        exist_ok=True
-    )
-    params = {'id': book_page['id']}
-    download_url = f'{url}txt.php'
-    response = requests.get(download_url, params=params)
-    response.raise_for_status()
-    check_for_redirect(response)
+    pathlib.Path('books').mkdir(parents=True, exist_ok=True)
     with open(folder_name, 'wb') as file:
-        file.write(response.content)
+        file.write(book_content)
 
 
 if __name__ == '__main__':
@@ -106,10 +103,10 @@ if __name__ == '__main__':
     current_book_id = parsed_arguments.start_id
     while current_book_id <= parsed_arguments.end_id:
         try:
-            html_book_content = get_book_by_id(current_book_id)
-            book_info = parse_book_page(html_book_content)
-            download_txt(url, book_info)
-            download_image(url, book_info)
+            html_book_content, book_content = get_book_by_id(current_book_id)
+            book_info = get_book_info(html_book_content)
+            download_txt(book_info['title'], book_content)
+            download_image(url, book_info['book_image'])
             current_book_id += 1
         except requests.exceptions.HTTPError:
             print(f'Книга с ID {current_book_id} не существует')
