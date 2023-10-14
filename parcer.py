@@ -1,7 +1,6 @@
 import os
 import pathlib
 import sys
-
 from bs4 import BeautifulSoup
 import requests
 import argparse
@@ -37,8 +36,6 @@ def parse_arguments():
 
 def file_extension(url):
     path, filename = os.path.split(urlsplit(url).path)
-    print(path)
-    print(filename)
     return filename
 
 
@@ -78,8 +75,6 @@ def get_book_by_id(book_id):
 
 
 def download_image(url, book_page_image):
-    # print(url)
-    # print(book_page_image)
     img_url = urljoin(url, book_page_image)
     folder_name = os.path.join('images', file_extension(img_url))
     pathlib.Path('images').mkdir(parents=True, exist_ok=True)
@@ -106,6 +101,7 @@ if __name__ == '__main__':
             html_book_content, book_content = get_book_by_id(current_book_id)
             book_info = get_book_info(html_book_content)
             download_txt(book_info['title'], book_content)
+            print(f"book inf {book_info['img_path']}   {book_info['book_image']}")
             download_image(url, book_info['book_image'])
             current_book_id += 1
         except requests.exceptions.HTTPError:
