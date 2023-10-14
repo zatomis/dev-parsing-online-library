@@ -75,7 +75,7 @@ def get_book_by_id(book_id):
 
 
 def download_image(url, book_page_image):
-    img_url = urljoin(url, book_page_image)
+    img_url = urljoin(url, str(book_page_image[1:]))
     folder_name = os.path.join('images', file_extension(img_url))
     pathlib.Path('images').mkdir(parents=True, exist_ok=True)
     response = requests.get(img_url)
