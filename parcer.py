@@ -1,10 +1,12 @@
+
+
 import os
 import pathlib
 import sys
 from bs4 import BeautifulSoup
 import requests
 import argparse
-from urllib.parse import urlsplit, urljoin
+from urllib.parse import urlsplit, urljoin, urlparse
 from time import sleep
 from pathvalidate import sanitize_filename
 
@@ -39,7 +41,7 @@ def file_extension(url):
     return filename
 
 
-def get_book_info(html_content):
+def get_values_from_html(html_content):
     soup = BeautifulSoup(html_content, 'lxml')
     title_tag = soup.find('td', class_='ow_px_td').find('div').find('h1').text.split('::')
     book_name = str(title_tag[0]).replace('\\xa0', ' ').strip()
@@ -48,6 +50,7 @@ def get_book_info(html_content):
     genre_tag = soup.find('span', class_='d_book').find('a')['title']
     comments = [comment.text for comment in soup.select('.texts span')]
     book_id = soup.select_one('.r_comm input[name="bookid"]')['value']
+
     serialized_book = {
         "id": book_id,
         "title": sanitize_filename(book_name),
@@ -75,7 +78,7 @@ def get_book_by_id(book_id):
 
 
 def download_image(url, book_page_image):
-    img_url = urljoin(url, str(book_page_image[1:]))
+    img_url = urljoin(url, urlparse(book_page_image).path)
     folder_name = os.path.join('images', file_extension(img_url))
     pathlib.Path('images').mkdir(parents=True, exist_ok=True)
     response = requests.get(img_url)
@@ -99,10 +102,9 @@ if __name__ == '__main__':
     while current_book_id <= parsed_arguments.end_id:
         try:
             html_book_content, book_content = get_book_by_id(current_book_id)
-            book_info = get_book_info(html_book_content)
-            download_txt(book_info['title'], book_content)
-            print(f"book inf {book_info['img_path']}   {book_info['book_image']}")
-            download_image(url, book_info['book_image'])
+            html_book_info = get_values_from_html(html_book_content)
+            download_txt(html_book_info['title'], book_content)
+            download_image(url, html_book_info['book_image'])
             current_book_id += 1
         except requests.exceptions.HTTPError:
             print(f'Книга с ID {current_book_id} не существует')
