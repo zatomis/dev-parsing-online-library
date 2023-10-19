@@ -1,5 +1,3 @@
-
-
 import os
 import pathlib
 import sys
@@ -12,8 +10,13 @@ from pathvalidate import sanitize_filename
 
 
 def check_for_redirect(response):
+    """
+    Поднимает исключение HTTPError, если ответ с не запрашиваемой страницы.
+    """
     if response.history:
         raise requests.HTTPError
+
+
 
 
 def parse_arguments():
@@ -36,12 +39,12 @@ def parse_arguments():
     return args
 
 
-def file_extension(url):
+def get_file_path(url):
     path, filename = os.path.split(urlsplit(url).path)
     return filename
 
 
-def get_values_from_html(html_content):
+def parse_book_page(html_content):
     soup = BeautifulSoup(html_content, 'lxml')
     title_tag = soup.find('td', class_='ow_px_td').find('div').find('h1').text.split('::')
     book_name = str(title_tag[0]).replace('\\xa0', ' ').strip()
@@ -58,7 +61,7 @@ def get_values_from_html(html_content):
         "comments": comments,
         "book_image": img_tag,
         "genre": genre_tag,
-        "img_path": os.path.join('img', file_extension(img_tag)),
+        "img_path": os.path.join('img', get_file_path(img_tag)),
         "book_path": os.path.join('books', f'{book_name.strip()}.txt')
     }
     return serialized_book
@@ -74,12 +77,12 @@ def get_book_by_id(book_id):
     url = f"https://tululu.org/b{book_id}"
     response = requests.get(url)
     response.raise_for_status()
-    return response.text, book_content
+    return response.text, book_content, url
 
 
 def download_image(url, book_page_image):
-    img_url = urljoin(url, urlparse(book_page_image).path)
-    folder_name = os.path.join('images', file_extension(img_url))
+    img_url = urljoin(url, book_page_image)
+    folder_name = os.path.join('images', get_file_path(img_url))
     pathlib.Path('images').mkdir(parents=True, exist_ok=True)
     response = requests.get(img_url)
     response.raise_for_status()
@@ -101,14 +104,16 @@ if __name__ == '__main__':
     current_book_id = parsed_arguments.start_id
     while current_book_id <= parsed_arguments.end_id:
         try:
-            html_book_content, book_content = get_book_by_id(current_book_id)
-            html_book_info = get_values_from_html(html_book_content)
-            download_txt(html_book_info['title'], book_content)
-            download_image(url, html_book_info['book_image'])
+            book_html_content, book_content, book_url = get_book_by_id(current_book_id)
+            book_properties = parse_book_page(book_html_content)
+            download_txt(book_properties['title'], book_content)
+            download_image(book_url, book_properties['book_image'])
             current_book_id += 1
         except requests.exceptions.HTTPError:
             print(f'Книга с ID {current_book_id} не существует')
             current_book_id += 1
+        except requests.TooManyRedirects:
+            print(f'Книга с ID {current_book_id} не существует')
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             print("Отсутствие соединения, ожидание 5сек...", file=sys.stderr)
             sleep(5)
