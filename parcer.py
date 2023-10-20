@@ -68,15 +68,16 @@ def parse_book_page(html_content):
 
 
 def get_book_by_id(url, book_id):
-    params = {'id': book_id}
     url_book = f"{url}txt.php"
+    params = {'id': book_id}
     response = requests.get(url_book, params)
     response.raise_for_status()
     book_content = response.content
     check_for_redirect(response=response)
-    url = f"{url}b{book_id}"
+    url = f"{url}b{book_id}/"
     response = requests.get(url)
     response.raise_for_status()
+    check_for_redirect(response=response)
     return response.text, book_content, url
 
 
