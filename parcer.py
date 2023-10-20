@@ -112,8 +112,6 @@ if __name__ == '__main__':
         except requests.exceptions.HTTPError:
             print(f'Книга с ID {current_book_id} не существует')
             current_book_id += 1
-        except requests.TooManyRedirects:
-            print(f'Книга с ID {current_book_id} не существует')
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             print("Отсутствие соединения, ожидание 5сек...", file=sys.stderr)
             sleep(5)
