@@ -4,7 +4,7 @@ import sys
 from bs4 import BeautifulSoup
 import requests
 import argparse
-from urllib.parse import urlsplit, urljoin, urlparse
+from urllib.parse import urlsplit, urljoin
 from time import sleep
 from pathvalidate import sanitize_filename
 
@@ -15,8 +15,6 @@ def check_for_redirect(response):
     """
     if response.history:
         raise requests.HTTPError
-
-
 
 
 def parse_arguments():
