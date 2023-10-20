@@ -67,14 +67,14 @@ def parse_book_page(html_content):
     return serialized_book
 
 
-def get_book_by_id(book_id):
+def get_book_by_id(url, book_id):
     params = {'id': book_id}
-    url_book = f"https://tululu.org/txt.php"
+    url_book = f"{url}txt.php"
     response = requests.get(url_book, params)
     response.raise_for_status()
     book_content = response.content
     check_for_redirect(response=response)
-    url = f"https://tululu.org/b{book_id}"
+    url = f"{url}b{book_id}"
     response = requests.get(url)
     response.raise_for_status()
     return response.text, book_content, url
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     current_book_id = parsed_arguments.start_id
     while current_book_id <= parsed_arguments.end_id:
         try:
-            book_html_content, book_content, book_url = get_book_by_id(current_book_id)
+            book_html_content, book_content, book_url = get_book_by_id(url, current_book_id)
             book_properties = parse_book_page(book_html_content)
             download_txt(book_properties['title'], book_content)
             download_image(book_url, book_properties['book_image'])
